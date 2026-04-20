@@ -1,44 +1,47 @@
 <template>
-  <div>
-    <h3>{{ msg }}</h3>
-    <h4>Student Scores Table</h4>
-    <table>
-      <thead>
-        <tr>
-          <th>No</th>
-          <th>Id</th>
-          <th>Name</th>
-          <th>Gender</th>
-          <th>Chinese</th>
-          <th>Math</th>
-          <th>English</th>
-          <th>Total</th>
-          <th>Average</th>
-          <th>Admin</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(s, index) in sortedStu" :key="index">
-          <td>{{ index+1 }}</td>
-          <td>{{ s.id }}</td>
-          <td>{{ s.name }}</td>
-          <td>{{ s.gender }}</td>
-          <td>{{ s.chinese }}</td>
-          <td>{{ s.math }}</td>
-          <td>{{ s.english }}</td>
-          <td>{{ s.total }}</td>
-          <td>{{ s.average }}</td>
-          <td>
-            <router-link to="/insert" active-class="active">Insert</router-link>
-            <router-link :to="'/edit/' + s.id" active-class="active">Edit</router-link>
-            <a href @click="del_stu_info(s.id)" active-class="active">Del</a>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="student-info">
+    <div class="page-header">
+      <h3>{{ msg }}</h3>
+      <h4>学生成绩表</h4>
+      <router-link to="/insert" class="btn-primary">添加学生</router-link>
+    </div>
+    <div class="table-container">
+      <table class="student-table">
+        <thead>
+          <tr>
+            <th>序号</th>
+            <th>学号</th>
+            <th>姓名</th>
+            <th>性别</th>
+            <th>语文</th>
+            <th>数学</th>
+            <th>英语</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(s, index) in students" :key="index" class="table-row">
+            <td>{{ index+1 }}</td>
+            <td>{{ s.id }}</td>
+            <td>{{ s.name }}</td>
+            <td>{{ s.gender }}</td>
+            <td>{{ s.chinese }}</td>
+            <td>{{ s.math }}</td>
+            <td>{{ s.english }}</td>
+            <td class="action-buttons">
+              <router-link :to="'/edit/' + s.id" class="btn-edit">编辑</router-link>
+              <button @click="del(s.id)" class="btn-delete">删除</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-if="students.length === 0" class="empty-state">
+        <p>暂无学生数据</p>
+      </div>
+    </div>
   </div>
 </template>
-
+<!-- 
 <script>
 export default {
   name: "StudentInfo",
@@ -56,21 +59,10 @@ export default {
         let stukey = localStorage.key(i);
         if (stukey.substring(0, 3) == "stu") {
           stuinfo = JSON.parse(localStorage.getItem(localStorage.key(i)));
-          // 计算总分和平均分
-          let chinese = parseFloat(stuinfo.chinese) || 0;
-          let math = parseFloat(stuinfo.math) || 0;
-          let english = parseFloat(stuinfo.english) || 0;
-          stuinfo.total = chinese + math + english;
-          stuinfo.average = (stuinfo.total / 3).toFixed(2);
           stu.push(stuinfo);
         }
       }
       return stu;
-    },
-    sortedStu: function () {
-      return this.stu.sort((a, b) => {
-        return parseFloat(b.average) - parseFloat(a.average);
-      });
     },
   },
   methods: {
@@ -79,55 +71,201 @@ export default {
     },
   },
 };
+</script> -->
+<script setup>
+import axios from 'axios';
+import { ref, computed } from "vue";
+
+const msg = "Welcome to Student Management App";
+const students = ref([]);
+
+// 获取数据
+axios.get("http://127.0.0.1:8081/list_user")
+  .then(response => students.value = response.data)
+  .catch(error => console.error("获取学生数据出错:", error));
+
+const formData = computed(() => {
+  return students.value.map(s => ({
+    id: s.id,
+    name: s.name,
+    gender: s.gender,
+    age: s.age,
+    chinese: s.chinese,
+    math: s.math,
+    english: s.english
+  }));
+});
+
+const del = (id) => {
+  axios.delete(`http://127.0.0.1:8081/delete/${id}`)
+    .then(() => {
+      location.reload();
+    })
+    .catch(error => console.error("删除学生数据出错:", error));
+}
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-h3,
-h4 {
-  font-weight: normal;
+.student-info {
+  width: 100%;
 }
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
-  margin-right: 20px;
-}
-table {
-  width: 98%;
-  margin: 16px 0;
-  border-collapse: collapse;
-  border: 0;
-}
-th {
-  background-color: #93daff;
-  color: #000000;
-}
-th,
-td {
-  font-size: 0.95em;
+
+/* 页面头部 */
+.page-header {
+  margin-bottom: 30px;
   text-align: center;
-  padding: 4px;
+}
+
+.page-header h3 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.page-header h4 {
+  font-size: 18px;
+  font-weight: 500;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+/* 主按钮 */
+.btn-primary {
+  display: inline-block;
+  background-color: #3498db;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: #2980b9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: white;
+}
+
+/* 表格容器 */
+.table-container {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+/* 学生表格 */
+.student-table {
+  width: 100%;
   border-collapse: collapse;
 }
-th,
-td {
-  border: 1px solid #c1e9fe;
-  border-width: 1px 0 1px 0;
+
+.student-table th {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  font-weight: 600;
+  text-align: center;
+  padding: 12px 15px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
-tr {
-  border: 1px solid #c1e9fe;
+
+.student-table td {
+  text-align: center;
+  padding: 12px 15px;
+  font-size: 14px;
+  border-bottom: 1px solid #e0e0e0;
 }
-tr:nth-child(odd) {
-  background-color: #dbf2fe;
+
+/* 表格行 */
+.table-row {
+  transition: background-color 0.3s ease;
 }
-tr:nth-child(even) {
-  background-color: #fdfdfd;
+
+.table-row:hover {
+  background-color: #f8f9fa;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-edit {
+  background-color: #27ae60;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  transition: all 0.3s ease;
+}
+
+.btn-edit:hover {
+  background-color: #219a52;
+  transform: translateY(-1px);
+  color: white;
+}
+
+.btn-delete {
+  background-color: #e74c3c;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-delete:hover {
+  background-color: #c0392b;
+  transform: translateY(-1px);
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.empty-state p {
+  font-size: 16px;
+  margin: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .page-header h3 {
+    font-size: 20px;
+  }
+  
+  .page-header h4 {
+    font-size: 16px;
+  }
+  
+  .student-table th,
+  .student-table td {
+    padding: 10px 8px;
+    font-size: 13px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .btn-edit,
+  .btn-delete {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
 }
 </style>
