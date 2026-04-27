@@ -15,18 +15,39 @@
 ```
 student-score-system/
 ├── backend/               # 后端代码
-│   ├── express_index2.js  # 后端主入口文件
-│   ├── package.json       # 后端依赖
+│   ├── config/            # 配置文件
+│   │   └── config.js      # 数据库和服务器配置
+│   ├── models/            # 数据库模型
+│   │   ├── db.js          # 数据库连接和初始化
+│   │   └── Student.js     # 学生模型（业务逻辑）
+│   ├── routes/            # API路由
+│   │   └── studentRoutes.js  # 学生相关API路由
+│   ├── index.js           # 主入口文件
+│   ├── package-lock.json  # 依赖锁文件
+│   └── package.json       # 后端依赖
 ├── vuestu/                # 前端代码
 │   ├── public/            # 静态资源
+│   │   ├── favicon.ico    # 网站图标
+│   │   └── index.html     # 前端入口HTML
 │   ├── src/               # 源代码
-│   │   ├── components/    # 组件
-│   │   ├── router/        # 路由
-│   │   ├── views/         # 视图
-│   │   ├── App.vue        # 根组件
-│   │   ├── main.js        # 入口文件
-│   ├── package.json       # 前端依赖
+│   │   ├── components/     # 组件
+│   │   │   ├── StudentEdit.vue  # 编辑学生组件
+│   │   │   ├── StudentInfo.vue  # 学生列表组件
+│   │   │   └── StudentInsert.vue  # 添加学生组件
+│   │   ├── router/         # 路由
+│   │   │   └── index.js    # 路由配置
+│   │   ├── views/          # 视图
+│   │   │   └── HomeView.vue  # 主页
+│   │   ├── App.vue         # 根组件
+│   │   └── main.js         # 前端入口文件
+│   ├── package-lock.json   # 依赖锁文件
+│   └── package.json        # 前端依赖
+├── .gitignore             # Git忽略文件
+├── PROJECT_STRUCTURE.md   # 项目结构解释文档
 ├── README.md              # 项目说明
+├── database_schema.sql     # 数据库结构SQL文件
+├── start.bat              # 一键启动脚本
+└── test_api.js            # API测试脚本
 ```
 
 ## 功能特性
@@ -86,8 +107,6 @@ student-score-system/
    cd backend && npm install
    # 安装前端依赖
    cd ../vuestu && npm install
-   # 安装测试脚本依赖
-   cd .. && npm install
    ```
 
 2. 运行一键启动脚本：
@@ -114,7 +133,7 @@ student-score-system/
 
 3. 运行后端服务器：
    ```bash
-   node express_index2.js
+   node index.js
    ```
 
    后端服务器将运行在 http://127.0.0.1:8081/
@@ -195,7 +214,7 @@ student-score-system/
 
 - 确保MySQL服务正在运行
 - 确保后端服务器和前端服务器都已启动
-- 数据库连接信息在 `backend/express_index2.js` 文件中配置
+- 数据库连接信息在 `backend/config/config.js` 文件中配置
 - 前端API调用地址在组件中硬编码为 `http://127.0.0.1:8081/`
 
 ## API测试
@@ -213,8 +232,14 @@ student-score-system/
 
 ### 运行测试脚本
 
-1. 确保后端服务器已经启动
-2. 运行测试脚本：
+1. 安装测试脚本依赖：
+   ```bash
+   # 在项目根目录运行
+   npm install axios
+   ```
+
+2. 确保后端服务器已经启动
+3. 运行测试脚本：
    ```bash
    # 在项目根目录运行
    node test_api.js
