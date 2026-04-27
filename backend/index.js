@@ -1,10 +1,12 @@
 var express = require("express");
 var mysql = require("mysql");
 var bodyParser = require("body-parser");
+const cors = require("cors");
 var app = express();
 app.use("/public", express.static("public"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors());
 
 //创建数据库连接
 var connection = mysql.createConnection({
@@ -14,6 +16,24 @@ var connection = mysql.createConnection({
     database: "vuestu",
 });
 connection.connect();
+
+// 检查并修改数据库结构
+connection.query("ALTER TABLE stuScore ADD COLUMN gender BIT(1);", function(error, results, fields) {
+    if (error) console.error("添加gender字段失败:", error);
+});
+
+connection.query("ALTER TABLE stuScore ADD COLUMN total INT;", function(error, results, fields) {
+    if (error) console.error("添加total字段失败:", error);
+});
+
+connection.query("ALTER TABLE stuScore ADD COLUMN average DECIMAL(5,2);", function(error, results, fields) {
+    if (error) console.error("添加average字段失败:", error);
+});
+
+// 更新现有数据的总分和平均分
+connection.query("UPDATE stuScore SET total = chinese + math + english, average = (chinese + math + english) / 3;", function(error, results, fields) {
+    if (error) console.error("更新总分和平均分失败:", error);
+});
 
 // 测试主页输出 成绩表中所有数据
 app.get("/", function(req, res) {
@@ -30,22 +50,26 @@ app.get("/", function(req, res) {
 // 获取所有学生成绩
 app.get("/list_user", function(req, res) {
     console.log("/list_user GET 请求");
-    connection.query("SELECT * FROM stuScore", function(error, results, fields) {
+    connection.query("SELECT * FROM stuScore ORDER BY average DESC", function(error, results, fields) {
         if (error) throw error;
+        // 转换性别字段
+        results.forEach(function(student) {
+            student.gender = student.gender === 1 ? '男' : '女';
+        });
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(results));
     });
 });
 
 // 添加学生成绩
-app.post("/add_user", function(req, res) {
-    console.log("/add_user POST 请求");
-    var { name, gender, chinese, math, english } = req.body;
+app.post("/insert", function(req, res) {
+    console.log("/insert POST 请求");
+    var { id, name, gender, chinese, math, english } = req.body;
     var total = parseInt(chinese) + parseInt(math) + parseInt(english);
     var average = total / 3;
     
-    var sql = "INSERT INTO stuScore (name, gender, chinese, math, english, total, average) VALUES (?, ?, ?, ?, ?, ?, ?)";
-    var values = [name, gender, chinese, math, english, total, average];
+    var sql = "INSERT INTO stuScore (id, name, gender, chinese, math, english, total, average) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    var values = [id, name, gender === '男' ? 1 : 0, chinese, math, english, total, average];
     
     connection.query(sql, values, function(error, results, fields) {
         if (error) throw error;
@@ -55,14 +79,14 @@ app.post("/add_user", function(req, res) {
 });
 
 // 修改学生成绩
-app.post("/update_user", function(req, res) {
-    console.log("/update_user POST 请求");
+app.post("/edit", function(req, res) {
+    console.log("/edit POST 请求");
     var { id, name, gender, chinese, math, english } = req.body;
     var total = parseInt(chinese) + parseInt(math) + parseInt(english);
     var average = total / 3;
     
     var sql = "UPDATE stuScore SET name=?, gender=?, chinese=?, math=?, english=?, total=?, average=? WHERE id=?";
-    var values = [name, gender, chinese, math, english, total, average, id];
+    var values = [name, gender === '男' ? 1 : 0, chinese, math, english, total, average, id];
     
     connection.query(sql, values, function(error, results, fields) {
         if (error) throw error;
@@ -72,9 +96,9 @@ app.post("/update_user", function(req, res) {
 });
 
 // 删除学生成绩
-app.get("/del_user", function(req, res) {
-    console.log("/del_user 响应 DELETE 请求");
-    var id = req.query.id;
+app.delete("/delete/:id", function(req, res) {
+    console.log("/delete/:id DELETE 请求");
+    var id = req.params.id;
     
     var sql = "DELETE FROM stuScore WHERE id=?";
     
@@ -94,6 +118,10 @@ app.get("/get_user", function(req, res) {
     
     connection.query(sql, [id], function(error, results, fields) {
         if (error) throw error;
+        // 转换性别字段
+        if (results[0]) {
+            results[0].gender = results[0].gender === 1 ? '男' : '女';
+        }
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(results[0]));
     });

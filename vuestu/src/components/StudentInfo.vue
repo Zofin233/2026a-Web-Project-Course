@@ -16,6 +16,8 @@
             <th>语文</th>
             <th>数学</th>
             <th>英语</th>
+            <th>总分</th>
+            <th>平均分</th>
             <th>操作</th>
           </tr>
         </thead>
@@ -28,6 +30,8 @@
             <td>{{ s.chinese }}</td>
             <td>{{ s.math }}</td>
             <td>{{ s.english }}</td>
+            <td>{{ s.total }}</td>
+            <td>{{ s.average.toFixed(2) }}</td>
             <td class="action-buttons">
               <router-link :to="'/edit/' + s.id" class="btn-edit">编辑</router-link>
               <button @click="del(s.id)" class="btn-delete">删除</button>

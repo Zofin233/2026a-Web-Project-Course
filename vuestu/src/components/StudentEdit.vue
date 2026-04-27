@@ -17,19 +17,26 @@
         </div>
         <div class="form-group">
           <label for="gender">性别</label>
-          <input type="text" id="gender" v-model="gender" class="form-input" required />
+          <select id="gender" v-model="gender" class="form-input" required>
+            <option value="">请选择</option>
+            <option value="男">男</option>
+            <option value="女">女</option>
+          </select>
         </div>
         <div class="form-group">
           <label for="chinese">语文</label>
-          <input type="number" id="chinese" v-model="chinese" class="form-input" required />
+          <input type="number" id="chinese" v-model="chinese" class="form-input" required min="0" max="100" />
+          <span v-if="chineseError" class="error-message">{{ chineseError }}</span>
         </div>
         <div class="form-group">
           <label for="math">数学</label>
-          <input type="number" id="math" v-model="math" class="form-input" required />
+          <input type="number" id="math" v-model="math" class="form-input" required min="0" max="100" />
+          <span v-if="mathError" class="error-message">{{ mathError }}</span>
         </div>
         <div class="form-group">
           <label for="english">英语</label>
-          <input type="number" id="english" v-model="english" class="form-input" required />
+          <input type="number" id="english" v-model="english" class="form-input" required min="0" max="100" />
+          <span v-if="englishError" class="error-message">{{ englishError }}</span>
         </div>
         <div class="form-actions">
           <button type="submit" class="btn-submit">保存修改</button>
@@ -97,6 +104,11 @@ const chinese = ref(0);
 const math = ref(0);
 const english = ref(0);
 
+// 错误提示
+const chineseError = ref('');
+const mathError = ref('');
+const englishError = ref('');
+
 // 初始化获取学生数据
 onMounted(() => {
   axios.get(`http://127.0.0.1:8081/list_user`)
@@ -115,32 +127,68 @@ onMounted(() => {
     });
 });
 
-const submitForm = () => {
-    // 构造要提交的学生信息数据
-    const studentInfo = {
-      id: id,
-      name: name.value,
-      gender: gender.value,
-      chinese: chinese.value,
-      math: math.value,
-      english: english.value
-    };
+// 验证函数
+const validateForm = () => {
+  let isValid = true;
+  
+  // 验证语文成绩
+  if (chinese.value < 0 || chinese.value > 100) {
+    chineseError.value = '语文成绩必须在0-100之间';
+    isValid = false;
+  } else {
+    chineseError.value = '';
+  }
+  
+  // 验证数学成绩
+  if (math.value < 0 || math.value > 100) {
+    mathError.value = '数学成绩必须在0-100之间';
+    isValid = false;
+  } else {
+    mathError.value = '';
+  }
+  
+  // 验证英语成绩
+  if (english.value < 0 || english.value > 100) {
+    englishError.value = '英语成绩必须在0-100之间';
+    isValid = false;
+  } else {
+    englishError.value = '';
+  }
+  
+  return isValid;
+};
 
-    // 使用 Axios 发送 POST 请求
-    axios.post(`http://127.0.0.1:8081/edit`, studentInfo)
-      .then(response => {
-        // 处理请求成功的情况
-        console.log("学生信息编辑成功！", response.data);
-        // 弹出成功提示
-        alert('学生信息编辑成功！');
-        // 跳转回到展示页
-        router.push('/info');
-      })
-      .catch(error => {
-        // 处理请求失败的情况
-        console.error("编辑学生信息时出错：", error);
-        alert('编辑失败，请重试');
-      });
+const submitForm = () => {
+  // 验证表单
+  if (!validateForm()) {
+    return;
+  }
+  
+  // 构造要提交的学生信息数据
+  const studentInfo = {
+    id: id,
+    name: name.value,
+    gender: gender.value,
+    chinese: chinese.value,
+    math: math.value,
+    english: english.value
+  };
+
+  // 使用 Axios 发送 POST 请求
+  axios.post(`http://127.0.0.1:8081/edit`, studentInfo)
+    .then(response => {
+      // 处理请求成功的情况
+      console.log("学生信息编辑成功！", response.data);
+      // 弹出成功提示
+      alert('学生信息编辑成功！');
+      // 跳转回到展示页
+      router.push('/info');
+    })
+    .catch(error => {
+      // 处理请求失败的情况
+      console.error("编辑学生信息时出错：", error);
+      alert('编辑失败，请重试');
+    });
 };
   
 
@@ -227,6 +275,7 @@ const submitForm = () => {
   border-radius: 4px;
   font-size: 14px;
   transition: all 0.3s ease;
+  width: 100%;
 }
 
 .form-input:focus {
@@ -238,6 +287,14 @@ const submitForm = () => {
 .form-input[readonly] {
   background-color: #f5f5f5;
   cursor: not-allowed;
+}
+
+/* 错误提示 */
+.error-message {
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 4px;
+  text-align: left;
 }
 
 /* 表单操作 */

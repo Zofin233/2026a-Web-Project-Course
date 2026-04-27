@@ -9,7 +9,8 @@
       <form @submit.prevent="submitForm" class="student-form">
         <div class="form-group">
           <label for="id">学号</label>
-          <input type="text" id="id" v-model="id" class="form-input" required />
+          <input type="text" id="id" v-model="id" class="form-input" required pattern="^\d{5}$" title="学号必须是5位数字" />
+          <span v-if="idError" class="error-message">{{ idError }}</span>
         </div>
         <div class="form-group">
           <label for="name">姓名</label>
@@ -17,19 +18,26 @@
         </div>
         <div class="form-group">
           <label for="gender">性别</label>
-          <input type="text" id="gender" v-model="gender" class="form-input" required />
+          <select id="gender" v-model="gender" class="form-input" required>
+            <option value="">请选择</option>
+            <option value="男">男</option>
+            <option value="女">女</option>
+          </select>
         </div>
         <div class="form-group">
           <label for="chinese">语文</label>
-          <input type="number" id="chinese" v-model="chinese" class="form-input" required />
+          <input type="number" id="chinese" v-model="chinese" class="form-input" required min="0" max="100" />
+          <span v-if="chineseError" class="error-message">{{ chineseError }}</span>
         </div>
         <div class="form-group">
           <label for="math">数学</label>
-          <input type="number" id="math" v-model="math" class="form-input" required />
+          <input type="number" id="math" v-model="math" class="form-input" required min="0" max="100" />
+          <span v-if="mathError" class="error-message">{{ mathError }}</span>
         </div>
         <div class="form-group">
           <label for="english">英语</label>
-          <input type="number" id="english" v-model="english" class="form-input" required />
+          <input type="number" id="english" v-model="english" class="form-input" required min="0" max="100" />
+          <span v-if="englishError" class="error-message">{{ englishError }}</span>
         </div>
         <div class="form-actions">
           <button type="submit" class="btn-submit">添加学生</button>
@@ -101,27 +109,80 @@ const chinese = ref(0);
 const math = ref(0);
 const english = ref(0);
 
-const submitForm = () => {
-     const studentInfo = {
-      id: id.value,
-      name: name.value,
-      gender: gender.value,
-      chinese: chinese.value,
-      math: math.value,
-      english: english.value
-    };
+// 错误提示
+const idError = ref('');
+const chineseError = ref('');
+const mathError = ref('');
+const englishError = ref('');
 
-    axios.post("http://127.0.0.1:8081/insert", studentInfo)
-      .then(response => {
-        console.log("学生信息保存成功！", response.data);
-        alert('学生信息添加成功！');
-        router.push('/info');
-      })
-      .catch(error => {
-        console.error("保存学生信息时出错：", error);
-        alert('添加失败，请重试');
-      });
+// 验证函数
+const validateForm = () => {
+  let isValid = true;
+  
+  // 验证学号
+  if (!id.value) {
+    idError.value = '请输入学号';
+    isValid = false;
+  } else if (!/^\d{5}$/.test(id.value)) {
+    idError.value = '学号必须是5位数字';
+    isValid = false;
+  } else {
+    idError.value = '';
+  }
+  
+  // 验证语文成绩
+  if (chinese.value < 0 || chinese.value > 100) {
+    chineseError.value = '语文成绩必须在0-100之间';
+    isValid = false;
+  } else {
+    chineseError.value = '';
+  }
+  
+  // 验证数学成绩
+  if (math.value < 0 || math.value > 100) {
+    mathError.value = '数学成绩必须在0-100之间';
+    isValid = false;
+  } else {
+    mathError.value = '';
+  }
+  
+  // 验证英语成绩
+  if (english.value < 0 || english.value > 100) {
+    englishError.value = '英语成绩必须在0-100之间';
+    isValid = false;
+  } else {
+    englishError.value = '';
+  }
+  
+  return isValid;
+};
+
+const submitForm = () => {
+  // 验证表单
+  if (!validateForm()) {
+    return;
+  }
+  
+  const studentInfo = {
+    id: id.value,
+    name: name.value,
+    gender: gender.value,
+    chinese: chinese.value,
+    math: math.value,
+    english: english.value
   };
+
+  axios.post("http://127.0.0.1:8081/insert", studentInfo)
+    .then(response => {
+      console.log("学生信息保存成功！", response.data);
+      alert('学生信息添加成功！');
+      router.push('/info');
+    })
+    .catch(error => {
+      console.error("保存学生信息时出错：", error);
+      alert('添加失败，请重试');
+    });
+};
 
 </script>
 
@@ -208,12 +269,21 @@ const submitForm = () => {
   border-radius: 4px;
   font-size: 14px;
   transition: all 0.3s ease;
+  width: 100%;
 }
 
 .form-input:focus {
   outline: none;
   border-color: #3498db;
   box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+}
+
+/* 错误提示 */
+.error-message {
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 4px;
+  text-align: left;
 }
 
 /* 表单操作 */
